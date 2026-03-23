@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Document Verification & Compliance System</title>
+    <style>
+        /* Global Reset */
+        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
+        body { display: flex; flex-direction: column; min-height: 100vh; background-color: #ffffff; color: #000; }
+
+        /* 1. Top Header Block (Steel Blue) */
+        .top-header {
+            background-color: #5c85a5; 
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* 2. Sub-Navigation Bar (Light Blue/Gray) */
+        .sub-nav {
+            background-color: #d1dbe8;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-bottom: 1px solid #b0c0d0;
+        }
+        .sub-nav a {
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .sub-nav a:hover { color: #5c85a5; text-decoration: underline; }
+
+        /* 3. Main Split Container */
+        .main-container {
+            display: flex;
+            flex: 1; /* Fills the remaining vertical space */
+        }
+
+        /* 4. Left Sidebar (System Modules) */
+        .sidebar {
+            background-color: #e6ebf5;
+            width: 220px;
+            padding: 20px 0;
+            border-right: 1px solid #d0d5e0;
+        }
+        
+        .sidebar-category {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #666;
+            font-weight: bold;
+            margin: 15px 0 5px 20px;
+            letter-spacing: 1px;
+        }
+        
+        .sidebar a {
+            display: block;
+            padding: 8px 20px;
+            color: #222;
+            text-decoration: none;
+            font-size: 13px;
+            border-left: 3px solid transparent;
+        }
+        .sidebar a:hover { background-color: #d1dbe8; border-left-color: #5c85a5; }
+
+        /* 5. Center Content Area */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 120px; 
+            margin-bottom: 20px;
+        }
+
+        .content h1 {
+            font-size: 26px;
+            margin-bottom: 15px;
+            color: #000;
+        }
+
+        .content p {
+            font-size: 15px;
+            color: #333;
+            max-width: 650px;
+            line-height: 1.5;
+            margin-bottom: 40px;
+        }
+
+        /* The 3 Role Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .btn-portal {
+            background-color: #5c85a5;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+            font-size: 15px;
+            transition: 0.3s;
+        }
+        .btn-portal:hover {
+            background-color: #4a6f8a;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* 6. Bottom Footer (Dark Blue) */
+        .bottom-footer {
+            background-color: #5c85a5;
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="top-header">
+        Secure Document Verification & Compliance System
+    </header>
+
+    <nav class="sub-nav">
+        <a href="/">Home</a>
+        <a href="/login">Upload Document</a>
+        <a href="/login">Verify the Document</a>
+        <a href="/login">View Audit logs</a>
+    </nav>
+
+    <div class="main-container">
+        
+        <aside class="sidebar">
+            <div class="sidebar-category">User Access</div>
+            <a href="/login">System Login</a>
+            <a href="/login">My Submissions</a>
+            <a href="/login">Version History</a>
+            
+            <div class="sidebar-category">Verifier Access</div>
+            <a href="login.html">Review Queue</a>
+            <a href="login.html">Approval Workflow</a>
+            
+            <div class="sidebar-category">Admin Access</div>
+            <a href="login.html">System Audit Trail</a>
+            <a href="login.html">Global Statistics</a>
+        </aside>
+
+        <main class="content">
+            
+            <img src="/static/images/logo.png" alt="SecureDoc Logo" class="logo">
+            
+            <h1>Welcome to SecureDocument Portal</h1>
+            <p>Upload your documents securely, track your compliance status anytime, and enjoy a seamless verification experience managed by our automated system.</p>
+            
+            <div class="action-buttons">
+                <a href="/login" class="btn-portal">User </a>
+                <a href="/login" class="btn-portal">Verifier </a>
+                <a href="/login" class="btn-portal">Admin </a>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="bottom-footer">
+        &copy; 2026 SecureDoc System
+    </footer>
+
+</body>
+</html>
