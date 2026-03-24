@@ -175,6 +175,7 @@ def verifier_dashboard():
             }}
         }}
     </script>
+    
 </body>
 </html>
 """)
