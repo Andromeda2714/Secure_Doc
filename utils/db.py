@@ -1,5 +1,6 @@
 """Database connection and helper utilities"""
 import mysql.connector
+from mysql.connector import pooling
 from flask import g
 
 DATABASE_CONFIG = {
@@ -9,14 +10,25 @@ DATABASE_CONFIG = {
     'database': 'secure_document_db'
 }
 
+# Connection pool - reuses connections instead of creating new ones each request
+_pool = pooling.MySQLConnectionPool(
+    pool_name='securedoc_pool',
+    pool_size=5,
+    pool_reset_session=True,
+    **DATABASE_CONFIG
+)
+
 def get_db_connection():
-    """Get or create database connection"""
+    """Get a pooled connection for the current request"""
     if 'db' not in g:
-        g.db = mysql.connector.connect(**DATABASE_CONFIG)
+        g.db = _pool.get_connection()
     return g.db
 
 def close_db_connection(e=None):
-    """Close database connection"""
+    """Return connection back to pool at end of request"""
     db = g.pop('db', None)
     if db is not None:
-        db.close()
+        try:
+            db.close()  # returns to pool, not actually closed
+        except Exception:
+            pass
