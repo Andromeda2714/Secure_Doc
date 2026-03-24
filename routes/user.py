@@ -36,7 +36,6 @@ def user_dashboard():
             if doc[3] in ['Approved', 'Rejected']:
                 notif_count += 1
 
-        db.close()
     except Exception:
         pass
 
@@ -226,7 +225,6 @@ def my_submissions():
 
         cursor.execute("SELECT id, doc_type, file_name, status, comments FROM documentupload WHERE username = %s ORDER BY id DESC", (active_user,))
         user_docs = cursor.fetchall()
-        db.close()
     except Exception:
         pass
 
@@ -340,7 +338,6 @@ def version_history():
             dtype = doc[0]
             if dtype not in doc_history: doc_history[dtype] = []
             doc_history[dtype].append(doc)
-        db.close()
     except Exception:
         pass
 
@@ -436,7 +433,6 @@ def support():
         cursor.execute("SELECT fullname, email, dob FROM users WHERE username = %s", (active_user,))
         profile = cursor.fetchone()
         if profile: user_full, user_email, user_dob = profile
-        db.close()
     except Exception:
         pass
 
@@ -530,7 +526,6 @@ def faqs():
         profile = cursor.fetchone()
         if profile:
             user_full, user_email, user_dob = profile
-        db.close()
     except Exception:
         pass
 

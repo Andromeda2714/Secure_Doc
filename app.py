@@ -21,8 +21,9 @@ app.register_blueprint(user_bp)
 
 # Database initialization
 def init_db():
-    """Initialize database tables"""
-    conn = get_db_connection()
+    """Initialize database tables using a direct (non-pooled) connection"""
+    import mysql.connector
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
     
     # Create users table
@@ -60,10 +61,13 @@ def init_db():
 # Teardown function for database cleanup
 @app.teardown_appcontext
 def teardown_db(exception=None):
-    """Close database connection at request end"""
+    """Return pooled connection at request end"""
     db = g.pop('db', None)
     if db is not None:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass
 
 # Shared utility routes (not specific to any role)
 @app.route("/upload", methods=["POST"])
@@ -118,4 +122,4 @@ if __name__ == "__main__":
         init_db()
     
     # Run app
-    app.run(host="0.0.0.0", port=3000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=True, use_reloader=False)

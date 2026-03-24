@@ -534,7 +534,6 @@ def toggle_user_status():
         cursor.execute("UPDATE users SET role = %s WHERE username = %s", (new_role, username))
         db.commit()
         cursor.close()
-        db.close()
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -572,7 +571,6 @@ def deactivation_center():
         system_users = cursor.fetchall()
         
         cursor.close()
-        db.close()
     except Exception:
         pass
 
@@ -739,7 +737,6 @@ def compliance_manager():
         pending_count = cursor.fetchone()[0]
         
         cursor.close()
-        db.close()
     except Exception:
         pass
 
@@ -887,7 +884,6 @@ def audit():
         audit_records = cursor.fetchall()
         
         cursor.close()
-        db.close()
     except Exception:
         pass
 
