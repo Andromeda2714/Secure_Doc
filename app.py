@@ -22,41 +22,45 @@ app.register_blueprint(user_bp)
 # Database initialization
 def init_db():
     """Initialize database tables using a direct (non-pooled) connection"""
-    import mysql.connector
-    conn = mysql.connector.connect(**DATABASE_CONFIG)
-    cursor = conn.cursor()
-    
-    # Create users table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            fullname VARCHAR(255),
-            email VARCHAR(255) UNIQUE,
-            dob DATE,
-            username VARCHAR(255) UNIQUE,
-            password VARCHAR(255),
-            role VARCHAR(50),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Create documentupload table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS documentupload (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(255),
-            doc_type VARCHAR(100),
-            file_name VARCHAR(255),
-            status VARCHAR(50) DEFAULT 'Pending',
-            comments TEXT,
-            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (username) REFERENCES users(username)
-        )
-    ''')
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        import mysql.connector
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor()
+        
+        # Create users table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fullname VARCHAR(255),
+                email VARCHAR(255) UNIQUE,
+                dob DATE,
+                username VARCHAR(255) UNIQUE,
+                password VARCHAR(255),
+                role VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Create documentupload table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS documentupload (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255),
+                doc_type VARCHAR(100),
+                file_name VARCHAR(255),
+                status VARCHAR(50) DEFAULT 'Pending',
+                comments TEXT,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (username) REFERENCES users(username)
+            )
+        ''')
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Database initialization warning: {e}")
+        print("App will start but database features may not work")
 
 # Teardown function for database cleanup
 @app.teardown_appcontext
