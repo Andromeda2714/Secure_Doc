@@ -1,5 +1,4 @@
 """Authentication routes (Login, Register, Logout)"""
-from datetime import datetime
 import mysql.connector
 from flask import Blueprint, request, redirect, url_for, flash, send_from_directory, session
 from utils.db import get_db_connection
@@ -47,8 +46,8 @@ def register():
             conn = get_db_connection()
             cursor = conn.cursor()
             try:
-                cursor.execute('INSERT INTO users (fullname, email, dob, username, password, role, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)',
-                               (fullname, email, dob, username, password, role, datetime.now()))
+                cursor.execute('INSERT INTO users (fullname, email, dob, username, password, role) VALUES (%s, %s, %s, %s, %s, %s)',
+                               (fullname, email, dob, username, password, role))
                 conn.commit()
                 flash('Registration successful')
                 return redirect(url_for('auth.login'))

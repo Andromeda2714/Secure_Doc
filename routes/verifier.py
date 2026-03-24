@@ -47,9 +47,11 @@ def verifier_dashboard():
     # Build table rows
     rows = ""
     if pending_docs:
+        from flask import url_for
         for doc in pending_docs:
             doc_id, uname, fullname, dob, dtype, fname = doc
-            rows += f"<tr><td>SYS-{doc_id}</td><td><b>{fullname}</b><br>{dob}</td><td>{dtype}</td><td><a href='/uploads/{fname}' target='_blank'>View</a></td><td>[Approve/Reject]</td></tr>"
+            file_link = url_for('uploaded_file', filename=fname)
+            rows += f"<tr><td>SYS-{doc_id}</td><td><b>{fullname}</b><br>{dob}</td><td>{dtype}</td><td><a href='{file_link}' target='_blank'>View</a></td><td><button type='button' onclick=\"openActionModal({doc_id})\" style='background:#516d8a;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;'>Review</button></td></tr>"
     else:
         rows = "<tr><td colspan='5' style='text-align: center; padding: 40px;'>No pending reviews.</td></tr>"
     
@@ -132,8 +134,37 @@ def verifier_dashboard():
             </div>
         </div>
     </div>
+    <div id="actionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1); width:90%; max-width:500px;">
+            <h3 style="margin-top:0;">Review Document</h3>
+            <form method='post' action='/verify_action'>
+                <input type='hidden' id='modalDocId' name='id' value=''>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:bold;">Comments (optional):</label>
+                    <textarea id='modalComment' name='comment' style='width:100%; min-height:100px; padding:8px; border:1px solid #ddd; border-radius:4px; font-family:Arial; font-size:14px;' placeholder='Enter your comments here...'></textarea>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button type='button' onclick="closeActionModal()" style='background:#999;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;'>Cancel</button>
+                    <button type='submit' name='action' value='Rejected' style='background:#e74c3c;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;'>Reject</button>
+                    <button type='submit' name='action' value='Approved' style='background:#2ecc71;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;'>Approve</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <script>
+        function openActionModal(docId) {{
+            document.getElementById('modalDocId').value = docId;
+            document.getElementById('modalComment').value = '';
+            document.getElementById('actionModal').style.display = 'flex';
+        }}
+        function closeActionModal() {{
+            document.getElementById('actionModal').style.display = 'none';
+        }}
         window.onclick = function(event) {{
+            let modal = document.getElementById('actionModal');
+            if (event.target === modal) {{
+                closeActionModal();
+            }}
             if (!event.target.closest('.profile-menu')) {{
                 let dropdowns = document.getElementsByClassName("profile-dropdown");
                 for (let i = 0; i < dropdowns.length; i++) {{
