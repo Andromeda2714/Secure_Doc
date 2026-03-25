@@ -61,4 +61,4 @@ def register():
 @auth_bp.route("/logout")
 def logout():
     session.pop('user', None)
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('auth.index'))
