@@ -53,18 +53,18 @@ def admin_dashboard():
         .nav-links li a:hover, .nav-links li a.active {{ background: #3f5371; border-left: 5px solid white; }}
         .logout {{ padding: 15px 20px; background: #3f5371; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: auto; }}
         .main-content {{ flex: 1; display: flex; flex-direction: column; overflow-y: auto; }}
-        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; }}
+        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }}
         .topbar h2 {{ margin: 0; color: #333; }}
         .topbar-right {{ display: flex; align-items: center; gap: 25px; }}
-        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; }}
-        .notif-badge {{ position: absolute; top: -6px; right: -7px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; }}
-        .profile-menu {{ position: relative; }}
-        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; }}
-        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background: white; border: 1px solid #ddd; border-radius: 8px; min-width: 230px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); z-index: 100; }}
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+        .profile-menu {{ position: relative; display: inline-block; cursor: pointer; }}
+        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; }}
+        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); z-index: 100; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }}
         .profile-dropdown.show {{ display: block; }}
-        .profile-header {{ background: #3f5371; color: white; padding: 15px; text-align: center; }}
-        .profile-details {{ padding: 15px; }}
-        .profile-details p {{ margin: 4px 0; font-size: 14px; }}
+        .profile-header {{ background: #3e546a; color: white; padding: 15px; text-align: center; }}
+        .profile-details {{ padding: 15px; color: #333; }}
+        .profile-details p {{ margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
         .dashboard-body {{ padding: 30px; background: #edf4fb; flex: 1; }}
         .stats-grid {{ display: flex; gap: 20px; margin-bottom: 20px; }}
         .stat-card {{ background: white; border-radius: 8px; padding: 20px; flex: 1; box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-top: 4px solid #516d8a; }}
@@ -78,7 +78,6 @@ def admin_dashboard():
         <ul class="nav-links">
             <li><a href="/admin_dashboard" class="active">System Overview</a></li>
             <li><a href="/user_management">User Management</a></li>
-            <li><a href="/deactivation_center">Deactivation Center</a></li>
             <li><a href="/compliance_manager">Compliance Manager</a></li>
             <li><a href="/audit">Audit Trails</a></li>
         </ul>
@@ -88,16 +87,22 @@ def admin_dashboard():
         <div class="topbar">
             <h2>Administrator Dashboard</h2>
             <div class="topbar-right">
-                <div class="bell-wrapper">🔔{badge_html}</div>
+                <div class="bell-wrapper">
+                    🔔
+                    {badge_html}
+                </div>
+                
                 <div class="profile-menu" onclick="document.getElementById('adminDrop').classList.toggle('show')">
                     <div class="role-badge">{active_user}</div>
                     <div id="adminDrop" class="profile-dropdown">
-                        <div class="profile-header"><h3 style="margin:0">{user_full}</h3></div>
+                        <div class="profile-header">
+                            <h3 style="margin:0;">{user_full}</h3>
+                            <p style="margin:5px 0 0 0; font-size:12px; opacity:0.9;">ADMINISTRATOR</p>
+                        </div>
                         <div class="profile-details">
-                            <p>Username: {active_user}</p>
-                            <p>Email: {user_email}</p>
-                            <p>DOB: {user_dob}</p>
-                            <p>Role: {user_role}</p>
+                            <p><strong>Username:</strong> {active_user}</p>
+                            <p><strong>Email:</strong> {user_email}</p>
+                            <p><strong>DOB:</strong> {user_dob}</p>
                         </div>
                     </div>
                 </div>
@@ -114,8 +119,12 @@ def admin_dashboard():
     <script>
         window.onclick = function(event) {{
             if (!event.target.closest('.profile-menu')) {{
-                var dropdown = document.getElementById('adminDrop');
-                if (dropdown && dropdown.classList.contains('show')) dropdown.classList.remove('show');
+                let dropdowns = document.getElementsByClassName("profile-dropdown");
+                for (let i = 0; i < dropdowns.length; i++) {{
+                    if (dropdowns[i].classList.contains('show')) {{
+                        dropdowns[i].classList.remove('show');
+                    }}
+                }}
             }}
         }}
     </script>
@@ -133,6 +142,7 @@ def user_management():
         new_user = request.form.get('new_user')
         new_full = request.form.get('new_full')
         new_email = request.form.get('new_email')
+        new_phone = request.form.get('new_phone') # Added phone
         new_password = request.form.get('new_password')
         new_dob = request.form.get('new_dob')
         new_role = request.form.get('new_role')
@@ -140,15 +150,15 @@ def user_management():
             try:
                 db = get_db_connection()
                 cursor = db.cursor()
-                cursor.execute('INSERT INTO users (fullname, email, dob, username, password, role) VALUES (%s, %s, %s, %s, %s, %s)',
-                               (new_full, new_email, new_dob, new_user, new_password, new_role))
+                cursor.execute('INSERT INTO users (fullname, email, phone_number, dob, username, password, role) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                               (new_full, new_email, new_phone, new_dob, new_user, new_password, new_role))
                 db.commit()
                 cursor.close()
                 flash('User added successfully')
             except mysql.connector.IntegrityError:
                 flash('Username or email already exists')
-            except Exception:
-                flash('Error adding user')
+            except Exception as e:
+                flash(f'Error adding user: {e}')
         else:
             flash('All fields are required')
         return redirect(url_for('admin.user_management'))
@@ -164,16 +174,17 @@ def user_management():
         if profile:
             user_full, user_email, user_role, user_dob = profile
 
-        cursor.execute('SELECT username, fullname, email, role, dob FROM users')
+        cursor.execute('SELECT username, fullname, email, phone_number, dob, role FROM users')
         all_users = cursor.fetchall()
         for u in all_users:
-            uname, fname, email, role, dob = u
-            user_rows += f"<tr><td>{uname}</td><td>{fname}</td><td>{email}</td><td>{dob}</td><td><b>{role}</b></td></tr>"
+            uname, fname, email, phone, dob, role = u
+            user_rows += f"<tr><td>{uname}</td><td>{fname}</td><td>{email}</td><td>{phone or 'N/A'}</td><td>{dob}</td><td><b>{role}</b></td><td></td></tr>"
 
         cursor.execute("SELECT COUNT(*) FROM documentupload WHERE status = 'Pending'")
         pending_count = cursor.fetchone()[0]
         cursor.close()
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching user data: {e}")
         pass
 
     badge_html = f'<span class="notif-badge">{pending_count}</span>' if pending_count > 0 else ''
@@ -193,18 +204,18 @@ def user_management():
         .nav-links li a:hover, .nav-links li a.active {{ background: #3f5371; border-left: 5px solid white; }}
         .logout {{ padding: 15px 20px; background: #3f5371; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: auto; }}
         .main-content {{ flex: 1; display: flex; flex-direction: column; overflow-y: auto; }}
-        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; }}
+        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }}
         .topbar h2 {{ margin: 0; color: #333; }}
         .topbar-right {{ display: flex; align-items: center; gap: 25px; }}
-        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; }}
-        .notif-badge {{ position: absolute; top: -6px; right: -7px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; }}
-        .profile-menu {{ position: relative; }}
-        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; }}
-        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background: white; border: 1px solid #ddd; border-radius: 8px; min-width: 230px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); z-index: 100; }}
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+        .profile-menu {{ position: relative; display: inline-block; cursor: pointer; }}
+        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; }}
+        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); z-index: 100; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }}
         .profile-dropdown.show {{ display: block; }}
-        .profile-header {{ background: #3f5371; color: white; padding: 15px; text-align: center; }}
-        .profile-details {{ padding: 15px; }}
-        .profile-details p {{ margin: 4px 0; font-size: 14px; }}
+        .profile-header {{ background: #3e546a; color: white; padding: 15px; text-align: center; }}
+        .profile-details {{ padding: 15px; color: #333; }}
+        .profile-details p {{ margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
         .dashboard-body {{ padding: 30px; background: #edf4fb; flex: 1; }}
         .card {{ background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }}
         .registration-form {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }}
@@ -224,7 +235,6 @@ def user_management():
         <ul class="nav-links">
             <li><a href="/admin_dashboard">System Overview</a></li>
             <li><a href="/user_management" class="active">User Management</a></li>
-            <li><a href="/deactivation_center">Deactivation Center</a></li>
             <li><a href="/compliance_manager">Compliance Manager</a></li>
             <li><a href="/audit">Audit Trails</a></li>
         </ul>
@@ -234,16 +244,22 @@ def user_management():
         <div class="topbar">
             <h2>User Management</h2>
             <div class="topbar-right">
-                <div class="bell-wrapper">🔔{badge_html}</div>
+                <div class="bell-wrapper">
+                    🔔
+                    {badge_html}
+                </div>
+                
                 <div class="profile-menu" onclick="document.getElementById('adminDrop').classList.toggle('show')">
                     <div class="role-badge">{active_user}</div>
                     <div id="adminDrop" class="profile-dropdown">
-                        <div class="profile-header"><h3 style="margin:0">{user_full}</h3></div>
+                        <div class="profile-header">
+                            <h3 style="margin:0;">{user_full}</h3>
+                            <p style="margin:5px 0 0 0; font-size:12px; opacity:0.9;">ADMINISTRATOR</p>
+                        </div>
                         <div class="profile-details">
-                            <p>Username: {active_user}</p>
-                            <p>Email: {user_email}</p>
-                            <p>DOB: {user_dob}</p>
-                            <p>Role: {user_role}</p>
+                            <p><strong>Username:</strong> {active_user}</p>
+                            <p><strong>Email:</strong> {user_email}</p>
+                            <p><strong>DOB:</strong> {user_dob}</p>
                         </div>
                     </div>
                 </div>
@@ -256,6 +272,7 @@ def user_management():
                     <div class="form-group"><label>Username</label><input type="text" name="new_user" placeholder="e.g. johndoe123"></div>
                     <div class="form-group"><label>Full Name</label><input type="text" name="new_full" placeholder="e.g. John Doe"></div>
                     <div class="form-group"><label>Email Address</label><input type="email" name="new_email" placeholder="e.g. john@example.com"></div>
+                    <div class="form-group"><label>Phone Number</label><input type="text" name="new_phone" placeholder="e.g. 123-456-7890"></div>
                     <div class="form-group"><label>Password</label><input type="password" name="new_password" placeholder="••••••••"></div>
                     <div class="form-group"><label>Date of Birth</label><input type="date" name="new_dob"></div>
                     <div class="form-group"><label>System Role</label><select name="new_role"><option value="User">Standard User</option><option value="Verifier">Verifier</option><option value="Admin">Administrator</option></select></div>
@@ -264,435 +281,10 @@ def user_management():
             </div>
             <div class="card">
                 <h3>Registered System Users</h3>
-                <table><thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>DOB</th><th>Role</th></tr></thead><tbody>{user_rows}</tbody></table>
+                <table><thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Phone</th><th>DOB</th><th>Role</th><th>Action</th></tr></thead><tbody>{user_rows}</tbody></table>
             </div>
         </div>
     </div>
-    <script>
-        window.onclick = function(event) {{
-            if (!event.target.closest('.profile-menu')) {{
-                var dropdown = document.getElementById('adminDrop');
-                if (dropdown && dropdown.classList.contains('show')) dropdown.classList.remove('show');
-            }}
-        }}
-    </script>
-</body>
-</html>
-""")
-
-    if 'user' not in session or session['user']['role'] != 'Admin':
-        return redirect(url_for('auth.login'))
-    
-    active_user = session['user']['username']
-    
-    # Handle POST request for adding new user
-    if request.method == 'POST':
-        new_user = request.form.get('new_user')
-        new_full = request.form.get('new_full')
-        new_email = request.form.get('new_email')
-        new_password = request.form.get('new_password')
-        new_dob = request.form.get('new_dob')
-        new_role = request.form.get('new_role')
-        
-        if new_user and new_full and new_email and new_password and new_dob and new_role:
-            try:
-                db = get_db_connection()
-                cursor = db.cursor()
-                cursor.execute('INSERT INTO users (fullname, email, dob, username, password, role, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)',
-                               (new_full, new_email, new_dob, new_user, new_password, new_role, datetime.now()))
-                db.commit()
-                cursor.close()
-                flash('User added successfully')
-            except mysql.connector.IntegrityError:
-                flash('Username or email already exists')
-            except Exception as e:
-                flash('Error adding user')
-        else:
-            flash('All fields are required')
-        
-        return redirect(url_for('admin.user_management'))
-    
-    # Initialize variables for GET request
-    user_full = "Unknown"
-    user_email = "Unknown"
-    user_role = "Admin"
-    user_dob = "Unknown"
-    pending_count = 0
-    user_rows = ""
-    
-    try:
-        db = get_db_connection()
-        cursor = db.cursor()
-        
-        # 1. Fetch Admin Profile for the dropdown
-        cursor.execute("SELECT fullname, email, role, dob FROM users WHERE username = %s", (active_user,))
-        profile = cursor.fetchone()
-        if profile:
-            user_full, user_email, user_role, user_dob = profile
-    
-        # 2. Fetch all registered users for the table
-        cursor.execute("SELECT username, fullname, email, role, dob FROM users")
-        all_users = cursor.fetchall()
-        
-        # 3. Fetch Pending count for the notification bell
-        cursor.execute("SELECT COUNT(*) FROM documentupload WHERE status = 'Pending'")
-        pending_count = cursor.fetchone()[0]
-        
-        cursor.close()
-        
-        for user in all_users:
-            uname, fname, email, role, dob = user
-            user_rows += f"<tr><td>{uname}</td><td>{fname}</td><td>{email}</td><td>{dob}</td><td><b>{role}</b></td></tr>"
-    except Exception:
-        all_users = []
-        pending_count = 0
-    
-    # 4. PRE-CALCULATE THE BADGE HTML (Fixes the text-render error)
-    badge_html = ""
-    if pending_count > 0:
-        badge_html = f'<span class="notif-badge">{pending_count}</span>'
-    
-    return render_template_string(f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>User Management - SecureDoc</title>
-    <style>
-        body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f7f6; }}
-        
-        /* Sidebar Styles */
-        .sidebar {{ width: 250px; background: #516d8a; color: white; display: flex; flex-direction: column; }}
-        .sidebar-header {{ padding: 20px; background: #3e546a; text-align: center; font-weight: bold; font-size: 20px; margin: 0; }}
-        .nav-links {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
-        .nav-links li a {{ display: block; padding: 15px 20px; color: #ecf0f1; text-decoration: none; border-left: 4px solid transparent; transition: 0.3s; }}
-        .nav-links li a:hover, .nav-links li a.active {{ background: #3e546a; border-left: 4px solid white; padding-left: 25px; }}
-        .logout {{ padding: 15px 20px; background: #3e546a; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: auto; }}
-
-        /* Main Content & Topbar */
-        .main-content {{ flex: 1; display: flex; flex-direction: column; overflow-y: auto; }}
-        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }}
-        .topbar h2 {{ margin: 0; color: #333; }}
-        
-        .topbar-right {{ display: flex; align-items: center; gap: 25px; }}
-        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
-        .notif-badge {{ position: absolute; top: -5px; right: -8px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
-
-        /* Profile Dropdown */
-        .profile-menu {{ position: relative; display: inline-block; cursor: pointer; }}
-        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; }}
-        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); z-index: 100; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }}
-        .profile-dropdown.show {{ display: block; }}
-        .profile-header {{ background: #3e546a; color: white; padding: 15px; text-align: center; }}
-        .profile-details {{ padding: 15px; color: #333; }}
-        .profile-details p {{ margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
-
-        /* Form & Table Styles */
-        .dashboard-body {{ padding: 40px; background: #f8f9fa; flex: 1; }}
-        .card {{ background: white; padding: 25px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 25px; border-top: 4px solid #516d8a; }}
-        .registration-form {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }}
-        .form-group {{ display: flex; flex-direction: column; }}
-        .form-group label {{ font-size: 12px; font-weight: bold; color: #516d8a; margin-bottom: 5px; text-transform: uppercase; }}
-        .form-group input, .form-group select {{ padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }}
-        .full-width {{ grid-column: span 2; }}
-        .btn-add {{ background: #27ae60; color: white; padding: 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }}
-        .btn-add:hover {{ background: #219150; }}
-
-        table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }}
-        th {{ background: #f8f9fa; color: #555; text-transform: uppercase; font-size: 12px; }}
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <div class="sidebar-header">SecureDoc Admin</div>
-        <ul class="nav-links">
-            <li><a href="/admin_dashboard">System Overview</a></li>
-            <li><a href="/user_management" class="active">User Management</a></li>
-            <li><a href="/deactivation_center">Deactivation Center</a></li>
-            <li><a href="/compliance_manager">Compliance Manager</a></li>
-            <li><a href="/audit">Audit Trails</a></li>
-        </ul>
-        <a href="/logout" class="logout">Secure Logout</a>
-    </div>
-
-    <div class="main-content">
-        <div class="topbar">
-            <h2>User Management</h2>
-            <div class="topbar-right">
-                <div class="bell-wrapper">
-                    🔔
-                    {badge_html}
-                </div>
-                
-                <div class="profile-menu" onclick="document.getElementById('adminDrop').classList.toggle('show')">
-                    <div class="role-badge">{active_user}</div>
-                    <div id="adminDrop" class="profile-dropdown">
-                        <div class="profile-header">
-                            <h3 style="margin:0;">{user_full}</h3>
-                            <p style="margin:5px 0 0 0; font-size:12px; opacity:0.9;">ADMINISTRATOR</p>
-                        </div>
-                        <div class="profile-details">
-                            <p><strong>Username:</strong> {active_user}</p>
-                            <p><strong>Email:</strong> {user_email}</p>
-                            <p><strong>DOB:</strong> {user_dob}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-body">
-            <div class="card">
-                <h3 style="margin-top:0;">Register New System User</h3>
-                <form method="POST" class="registration-form">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" name="new_user" placeholder="e.g. johndoe123">
-                    </div>
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" name="new_full" placeholder="e.g. John Doe">
-                    </div>
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" name="new_email" placeholder="e.g. john@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" name="new_password" placeholder="••••••••">
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Birth</label>
-                        <input type="date" name="new_dob">
-                    </div>
-                    <div class="form-group">
-                        <label>System Role</label>
-                        <select name="new_role">
-                            <option value="User">Standard User</option>
-                            <option value="Verifier">Verifier</option>
-                            <option value="Admin">Administrator</option>
-                        </select>
-                    </div>
-                    <div class="full-width">
-                        <button type="submit" class="btn-add">Add New User</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="card">
-                <h3>Registered System Users</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Full Name</th>
-                            <th>Email</th>
-                            <th>DOB</th>
-                            <th>Role</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {user_rows}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        window.onclick = function(event) {{
-            if (!event.target.closest('.profile-menu')) {{
-                let dropdowns = document.getElementsByClassName("profile-dropdown");
-                for (let i = 0; i < dropdowns.length; i++) {{
-                    if (dropdowns[i].classList.contains('show')) dropdowns[i].classList.remove('show');
-                }}
-            }}
-        }}
-    </script>
-</body>
-</html>
-""")
-
-
-@admin_bp.route("/toggle_user_status", methods=["POST"])
-def toggle_user_status():
-    if "user" not in session or session["user"]["role"] != "Admin":
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
-
-    data = request.get_json()
-    username = data.get("username")
-    action = data.get("action")
-
-    if not username or action not in ["deactivate", "reactivate"]:
-        return jsonify({"success": False, "message": "Invalid request"}), 400
-
-    try:
-        db = get_db_connection()
-        cursor = db.cursor()
-        new_role = "Deactivated" if action == "deactivate" else "User"
-        cursor.execute("UPDATE users SET role = %s WHERE username = %s", (new_role, username))
-        db.commit()
-        cursor.close()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-@admin_bp.route("/deactivation_center")
-def deactivation_center():
-    if "user" not in session or session["user"]["role"] != "Admin":
-        return redirect(url_for("auth.login"))
-
-    active_user = session["user"]["username"]
-    user_full = "Unknown"
-    user_email = "Unknown"
-    user_role = "Admin"
-    user_dob = "Unknown"
-    system_users = []
-    pending_count = 0
-
-    try:
-        db = get_db_connection()
-        cursor = db.cursor()
-        
-        # Fetch admin profile
-        cursor.execute("SELECT fullname, email, role, dob FROM users WHERE username = %s", (active_user,))
-        profile = cursor.fetchone()
-        if profile:
-            user_full, user_email, user_role, user_dob = profile
-
-        # Fetch pending count for notification
-        cursor.execute("SELECT COUNT(*) FROM documentupload WHERE status = 'Pending'")
-        pending_count = cursor.fetchone()[0]
-
-        # Fetch all users except current admin
-        cursor.execute("SELECT username, fullname, email, role FROM users WHERE username != %s", (active_user,))
-        system_users = cursor.fetchall()
-        
-        cursor.close()
-    except Exception:
-        pass
-
-    # Build badge HTML
-    badge_html = f'<span class="notif-badge">{pending_count}</span>' if pending_count > 0 else ''
-    
-    # Build user rows HTML
-    user_rows = ""
-    for user in system_users:
-        uname, fname, email, role = user
-        status = "Active" if role != "Deactivated" else "Deactivated"
-        action_btn = "Deactivate" if role != "Deactivated" else "Reactivate"
-        action_cmd = "deactivate" if role != "Deactivated" else "reactivate"
-        user_rows += f"<tr><td>{uname}</td><td>{fname}</td><td>{role}</td><td><form action='/toggle_user_status' method='POST' style='margin:0;'><input type='hidden' name='username' value='{uname}'><input type='hidden' name='action' value='{action_cmd}'><button type='submit' class='btn-deactivate' onclick=\"return confirm('Are you sure you want to {action_cmd} {uname}?');\">{action_btn}</button></form></td></tr>"
-
-    return render_template_string(f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Deactivation Center - SecureDoc</title>
-    <style>
-        body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f7f6; }}
-        
-        /* Sidebar Styles */
-        .sidebar {{ width: 250px; background: #516d8a; color: white; display: flex; flex-direction: column; }}
-        .sidebar-header {{ padding: 20px; background: #3e546a; text-align: center; font-weight: bold; font-size: 20px; margin: 0; }}
-        .nav-links {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
-        .nav-links li a {{ display: block; padding: 15px 20px; color: #ecf0f1; text-decoration: none; border-left: 4px solid transparent; transition: 0.3s; }}
-        .nav-links li a:hover, .nav-links li a.active {{ background: #3e546a; border-left: 4px solid white; padding-left: 25px; }}
-        .logout {{ padding: 15px 20px; background: #3e546a; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: auto; }}
-
-        /* Main Content & Topbar */
-        .main-content {{ flex: 1; display: flex; flex-direction: column; overflow-y: auto; }}
-        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }}
-        .topbar h2 {{ margin: 0; color: #333; }}
-        
-        .topbar-right {{ display: flex; align-items: center; gap: 25px; }}
-        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
-        .notif-badge {{ position: absolute; top: -5px; right: -8px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
-
-        /* Profile Dropdown */
-        .profile-menu {{ position: relative; display: inline-block; cursor: pointer; }}
-        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; }}
-        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); z-index: 100; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }}
-        .profile-dropdown.show {{ display: block; }}
-        .profile-header {{ background: #3e546a; color: white; padding: 15px; text-align: center; }}
-        .profile-details {{ padding: 15px; color: #333; }}
-        .profile-details p {{ margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
-
-        /* Table & Cards */
-        .dashboard-body {{ padding: 40px; background: #f8f9fa; flex: 1; }}
-        .card {{ background: white; padding: 30px; border-radius: 8px; border: 1px solid #e0e0e0; border-top: 4px solid #e74c3c; }}
-        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
-        th {{ background-color: #f8f9fa; color: #555; text-transform: uppercase; font-size: 12px; }}
-        
-        .btn-deactivate {{ background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; }}
-        .btn-deactivate:hover {{ background: #c0392b; }}
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <div class="sidebar-header">SecureDoc Admin</div>
-        <ul class="nav-links">
-            <li><a href="/admin_dashboard">System Overview</a></li>
-            <li><a href="/user_management">User Management</a></li>
-            <li><a href="/deactivation_center" class="active">Deactivation Center</a></li>
-            <li><a href="/compliance_manager">Compliance Manager</a></li>
-            <li><a href="/audit">Audit Trails</a></li>
-        </ul>
-        <a href="/logout" class="logout">Secure Logout</a>
-    </div>
-
-    <div class="main-content">
-        <div class="topbar">
-            <h2>Account Deactivation Center</h2>
-            <div class="topbar-right">
-                <div class="bell-wrapper">
-                    🔔
-                    {badge_html}
-                </div>
-                
-                <div class="profile-menu" onclick="document.getElementById('adminDrop').classList.toggle('show')">
-                    <div class="role-badge">{active_user}</div>
-                    <div id="adminDrop" class="profile-dropdown">
-                        <div class="profile-header">
-                            <h3 style="margin:0;">{user_full}</h3>
-                            <p style="margin:5px 0 0 0; font-size:12px; opacity:0.9;">ADMINISTRATOR</p>
-                        </div>
-                        <div class="profile-details">
-                            <p><strong>Username:</strong> {active_user}</p>
-                            <p><strong>Email:</strong> {user_email}</p>
-                            <p><strong>DOB:</strong> {user_dob}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-body">
-            <div class="card">
-                <h3 style="margin-top: 0; color: #e74c3c;">System Access Control</h3>
-                <p style="color: #666; font-size: 14px;">Warning: Deactivating a user will immediately revoke their access to all portals. This action is logged in the Audit Trail.</p>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Full Name</th>
-                            <th>Role</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {user_rows if system_users else '<tr><td colspan="4" style="text-align:center; padding: 20px;">No other active users found.</td></tr>'}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <script>
         window.onclick = function(event) {{
             if (!event.target.closest('.profile-menu')) {{
@@ -709,38 +301,64 @@ def deactivation_center():
 </html>
 """)
 
-
-@admin_bp.route("/compliance_manager")
+@admin_bp.route("/compliance_manager", methods=['GET', 'POST'])
 def compliance_manager():
     if "user" not in session or session["user"]["role"] != "Admin":
         return redirect(url_for("auth.login"))
 
     active_user = session["user"]["username"]
-    user_full = "Unknown"
-    user_email = "Unknown"
-    user_role = "Admin"
-    user_dob = "Unknown"
+    user_full, user_email, user_role, user_dob = "Unknown", "Unknown", "Admin", "Unknown"
     pending_count = 0
+    id_guidelines, form_rules = "", ""
 
     try:
         db = get_db_connection()
-        cursor = db.cursor()
+        cursor = db.cursor(dictionary=True)
         
+        if request.method == 'POST':
+            rule_type = request.form.get('rule_type')
+            content = request.form.get('content')
+            
+            if rule_type and content:
+                update_cursor = db.cursor()
+                update_cursor.execute("UPDATE compliance_rules SET content = %s WHERE rule_type = %s", (content, rule_type))
+                
+                # Insert notifications for Users and Verifiers
+                msg = f"System Update: Admin has modified the Compliance {rule_type.replace('_', ' ').title()}."
+                update_cursor.execute("INSERT INTO notifications (username, message) VALUES ('role_user', %s)", (msg,))
+                update_cursor.execute("INSERT INTO notifications (username, message) VALUES ('role_verifier', %s)", (msg,))
+                
+                db.commit()
+                update_cursor.close()
+                flash(f"{rule_type.replace('_', ' ').title()} updated successfully!")
+            else:
+                flash("Invalid update request.", "error")
+            return redirect(url_for('admin.compliance_manager'))
+
         # Fetch admin profile
         cursor.execute("SELECT fullname, email, role, dob FROM users WHERE username = %s", (active_user,))
         profile = cursor.fetchone()
         if profile:
-            user_full, user_email, user_role, user_dob = profile
+            user_full, user_email, user_role, user_dob = profile['fullname'], profile['email'], profile['role'], profile['dob']
 
         # Fetch pending count
-        cursor.execute("SELECT COUNT(*) FROM documentupload WHERE status = 'Pending'")
-        pending_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) AS count FROM documentupload WHERE status = 'Pending'")
+        pending_count = cursor.fetchone()['count']
+        
+        # Fetch compliance rules
+        cursor.execute("SELECT rule_type, content FROM compliance_rules")
+        rules = cursor.fetchall()
+        for rule in rules:
+            if rule['rule_type'] == 'id_guidelines':
+                id_guidelines = rule['content']
+            elif rule['rule_type'] == 'form_rules':
+                form_rules = rule['content']
         
         cursor.close()
-    except Exception:
+    except Exception as e:
+        flash(f"An error occurred: {e}")
         pass
 
-    # Build badge HTML
     badge_html = f'<span class="notif-badge">{pending_count}</span>' if pending_count > 0 else ''
 
     return render_template_string(f"""
@@ -751,25 +369,18 @@ def compliance_manager():
     <title>Compliance Manager - SecureDoc</title>
     <style>
         body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f7f6; }}
-        
-        /* Sidebar Styles - Grayish Blue */
         .sidebar {{ width: 250px; background: #516d8a; color: white; display: flex; flex-direction: column; }}
         .sidebar-header {{ padding: 20px; background: #3e546a; text-align: center; font-weight: bold; font-size: 20px; margin: 0; }}
         .nav-links {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
         .nav-links li a {{ display: block; padding: 15px 20px; color: #ecf0f1; text-decoration: none; border-left: 4px solid transparent; transition: 0.3s; }}
         .nav-links li a:hover, .nav-links li a.active {{ background: #3e546a; border-left: 4px solid white; padding-left: 25px; }}
         .logout {{ padding: 15px 20px; background: #3e546a; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: auto; }}
-
-        /* Main Content & Topbar */
         .main-content {{ flex: 1; display: flex; flex-direction: column; overflow-y: auto; }}
         .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }}
         .topbar h2 {{ margin: 0; color: #333; }}
-        
         .topbar-right {{ display: flex; align-items: center; gap: 25px; }}
         .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
         .notif-badge {{ position: absolute; top: -5px; right: -8px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
-
-        /* Profile Dropdown */
         .profile-menu {{ position: relative; display: inline-block; cursor: pointer; }}
         .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; }}
         .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); z-index: 100; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }}
@@ -777,14 +388,13 @@ def compliance_manager():
         .profile-header {{ background: #3e546a; color: white; padding: 15px; text-align: center; }}
         .profile-details {{ padding: 15px; color: #333; }}
         .profile-details p {{ margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
-
-        /* Manager Content */
         .dashboard-body {{ padding: 40px; background: #f8f9fa; flex: 1; }}
         .card {{ background: white; padding: 30px; border-radius: 8px; border: 1px solid #e0e0e0; border-top: 4px solid #516d8a; margin-bottom: 25px; }}
-        .card h3 {{ color: #3e546a; margin-top: 0; }}
         textarea {{ width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; margin: 10px 0; resize: vertical; }}
         .btn-update {{ background: #516d8a; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }}
         .btn-update:hover {{ background: #3e546a; }}
+        .rules-display {{ background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 4px; white-space: pre-wrap; font-family: inherit; color: #333; }}
+        .edit-form {{ display: none; }}
     </style>
 </head>
 <body>
@@ -793,13 +403,11 @@ def compliance_manager():
         <ul class="nav-links">
             <li><a href="/admin_dashboard">System Overview</a></li>
             <li><a href="/user_management">User Management</a></li>
-            <li><a href="/deactivation_center">Deactivation Center</a></li>
             <li><a href="/compliance_manager" class="active">Compliance Manager</a></li>
             <li><a href="/audit">Audit Trails</a></li>
         </ul>
         <a href="/logout" class="logout">Secure Logout</a>
     </div>
-
     <div class="main-content">
         <div class="topbar">
             <h2>Compliance Standards Manager</h2>
@@ -825,36 +433,47 @@ def compliance_manager():
                 </div>
             </div>
         </div>
-
         <div class="dashboard-body">
             <div class="card">
                 <h3>Global Identification Standards</h3>
                 <p style="font-size: 14px; color: #666;">This content is displayed to Verifiers during document review.</p>
-                <form action="/update_compliance" method="POST">
-                    <textarea name="id_guidelines">1. Must be a government-issued ID (Passport, Driver's License).
-2. The name on the ID must match the System Data name.
-3. The image must be clear and legible.</textarea>
-                    <button type="submit" class="btn-update">Update ID Guidelines</button>
+                <div id="id-guidelines-view">
+                    <div class="rules-display">{id_guidelines}</div>
+                    <button class="btn-update" onclick="toggleEdit('id-guidelines', true)">Update ID Guidelines</button>
+                </div>
+                <form method="POST" id="id-guidelines-form" class="edit-form">
+                    <input type="hidden" name="rule_type" value="id_guidelines">
+                    <textarea name="content">{id_guidelines}</textarea>
+                    <button type="submit" class="btn-update">Save Changes</button>
+                    <button type="button" class="btn-update" style="background:#7f8c8d;" onclick="toggleEdit('id-guidelines', false)">Cancel</button>
                 </form>
             </div>
-
             <div class="card">
                 <h3>Form Compliance Rules</h3>
-                <form action="/update_compliance" method="POST">
-                    <textarea name="form_guidelines">1. Must be the most recent version of the compliance document.
-2. User signatures must be present and dated.
-3. Any incomplete fields result in immediate rejection.</textarea>
-                    <button type="submit" class="btn-update">Update Form Rules</button>
+                <p style="font-size: 14px; color: #666;">These rules are checked during the automated form analysis.</p>
+                <div id="form-rules-view">
+                    <div class="rules-display">{form_rules}</div>
+                    <button class="btn-update" onclick="toggleEdit('form-rules', true)">Update Rules</button>
+                </div>
+                <form method="POST" id="form-rules-form" class="edit-form">
+                    <input type="hidden" name="rule_type" value="form_rules">
+                    <textarea name="content">{form_rules}</textarea>
+                    <button type="submit" class="btn-update">Save Changes</button>
+                    <button type="button" class="btn-update" style="background:#7f8c8d;" onclick="toggleEdit('form-rules', false)">Cancel</button>
                 </form>
             </div>
         </div>
     </div>
-
     <script>
+        function toggleEdit(section, isEditing) {{
+            document.getElementById(section + '-view').style.display = isEditing ? 'none' : 'block';
+            document.getElementById(section + '-form').style.display = isEditing ? 'block' : 'none';
+        }}
+
         window.onclick = function(event) {{
             if (!event.target.closest('.profile-menu')) {{
-                let dropdowns = document.getElementsByClassName("profile-dropdown");
-                for (let i = 0; i < dropdowns.length; i++) {{
+                var dropdowns = document.getElementsByClassName("profile-dropdown");
+                for (var i = 0; i < dropdowns.length; i++) {{
                     if (dropdowns[i].classList.contains('show')) {{
                         dropdowns[i].classList.remove('show');
                     }}
@@ -905,6 +524,7 @@ def audit():
 <head>
     <meta charset="UTF-8">
     <title>System Audit Trail - SecureDoc</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; margin: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; }}
         .header {{ text-align: center; margin-bottom: 30px; color: #2c3e50; }}
@@ -917,8 +537,11 @@ def audit():
         .status-Pending {{ background: #f39c12; }}
         .status-Approved {{ background: #27ae60; }}
         .status-Rejected {{ background: #e74c3c; }}
-        .back-btn {{ display: inline-block; margin-bottom: 20px; padding: 10px 20px; background: #2c3e50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: 0.2s; }}
+        .top-action-bar {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }}
+        .back-btn {{ display: inline-block; padding: 10px 20px; background: #2c3e50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: 0.2s; }}
         .back-btn:hover {{ background: #34495e; }}
+        .export-pdf-btn {{ display: inline-block; padding: 10px 20px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }}
+        .export-pdf-btn:hover {{ background: #c0392b; }}
     </style>
 </head>
 <body>
@@ -928,19 +551,47 @@ def audit():
     </div>
 
     <div class="audit-container">
-        <a href="/admin_dashboard" class="back-btn">&larr; Back to Admin Portal</a>
+        <div class="top-action-bar">
+            <a href="/admin_dashboard" class="back-btn">&larr; Back to Admin Portal</a>
+            <button class="export-pdf-btn" onclick="exportTableToPDF()">Export to PDF</button>
+        </div>
         
-        <table>
-            <tr>
-                <th>Log ID</th>
-                <th>Uploaded By</th>
-                <th>Document Type</th>
-                <th>File Reference</th>
-                <th>Verification Status</th>
-            </tr>
-            {audit_rows}
-        </table>
+        <div id="pdf-content">
+            <h2 style="display:none; text-align:center; color:#2c3e50; margin-bottom: 20px;">System Audit Trail</h2>
+            <table>
+                <tr>
+                    <th>Log ID</th>
+                    <th>Uploaded By</th>
+                    <th>Document Type</th>
+                    <th>File Reference</th>
+                    <th>Verification Status</th>
+                </tr>
+                {audit_rows}
+            </table>
+        </div>
     </div>
+
+    <script>
+        function exportTableToPDF() {{
+            const element = document.getElementById('pdf-content');
+            
+            // Show the hidden title for the PDF
+            element.querySelector('h2').style.display = 'block';
+
+            const opt = {{
+              margin:       0.5,
+              filename:     'SecureDoc_Audit_Trail.pdf',
+              image:        {{ type: 'jpeg', quality: 0.98 }},
+              html2canvas:  {{ scale: 2 }},
+              jsPDF:        {{ unit: 'in', format: 'letter', orientation: 'portrait' }}
+            }};
+
+            // Generate PDF and hide title again
+            html2pdf().set(opt).from(element).save().then(() => {{
+                element.querySelector('h2').style.display = 'none';
+            }});
+        }}
+    </script>
 </body>
 </html>
 """)
