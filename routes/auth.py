@@ -19,8 +19,9 @@ def login():
             cursor = conn.cursor(dictionary=True)
             cursor.execute('SELECT * FROM users WHERE username = %s AND password = %s', (username, password))
             user = cursor.fetchone()
-            cursor.close()
+            
             if user:
+                cursor.close()
                 session['user'] = user
                 if user['role'] == 'Admin':
                     return redirect(url_for('admin.admin_dashboard'))
@@ -29,6 +30,18 @@ def login():
                 else:
                     return redirect(url_for('user.user_dashboard'))
             else:
+                cursor.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(100),
+                    message TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    is_read BOOLEAN DEFAULT FALSE
+                )""")
+                msg = f"SECURITY BREACH: Failed login attempt for username '{username}'."
+                cursor.execute("INSERT INTO notifications (username, message) VALUES ('role_admin', %s)", (msg,))
+                conn.commit()
+                cursor.close()
                 flash('Invalid credentials')
                 return redirect(url_for('auth.login'))
     return send_from_directory('static', 'login.html')
@@ -39,19 +52,43 @@ def register():
         fullname = request.form.get('fullname')
         email = request.form.get('email')
         dob = request.form.get('dob')
+        phone_number = request.form.get('phone_number')
         username = request.form.get('username')
         password = request.form.get('password')
         role = request.form.get('role')
-        if fullname and email and dob and username and password and role:
+        if fullname and email and dob and phone_number and username and password and role:
             conn = get_db_connection()
             cursor = conn.cursor()
             try:
-                cursor.execute('INSERT INTO users (fullname, email, dob, username, password, role) VALUES (%s, %s, %s, %s, %s, %s)',
-                               (fullname, email, dob, username, password, role))
+                cursor.execute('INSERT INTO users (fullname, email, dob, phone_number, username, password, role) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                               (fullname, email, dob, phone_number, username, password, role))
+                
+                cursor.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(100),
+                    message TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    is_read BOOLEAN DEFAULT FALSE
+                )""")
+                msg = f"New user registered: {fullname} ({username}) as {role}."
+                cursor.execute("INSERT INTO notifications (username, message) VALUES ('role_admin', %s)", (msg,))
+                
                 conn.commit()
                 flash('Registration successful')
                 return redirect(url_for('auth.login'))
             except mysql.connector.IntegrityError:
+                cursor.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(100),
+                    message TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    is_read BOOLEAN DEFAULT FALSE
+                )""")
+                msg = f"SECURITY BREACH: Duplicate registration attempt for '{username}' or '{email}'."
+                cursor.execute("INSERT INTO notifications (username, message) VALUES ('role_admin', %s)", (msg,))
+                conn.commit()
                 flash('Username or email already exists')
             finally:
                 cursor.close()
