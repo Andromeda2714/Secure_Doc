@@ -78,6 +78,7 @@ def admin_dashboard():
         <ul class="nav-links">
             <li><a href="/admin_dashboard" class="active">System Overview</a></li>
             <li><a href="/user_management">User Management</a></li>
+            <li><a href="/deactivation_center">Deactivation Center</a></li>
             <li><a href="/compliance_manager">Compliance Manager</a></li>
             <li><a href="/audit">Audit Trails</a></li>
         </ul>
@@ -131,7 +132,203 @@ def admin_dashboard():
 </body>
 </html>
 """)
+@admin_bp.route("/toggle_user_status", methods=["POST"])
+def toggle_user_status():
+    if "user" not in session or session["user"]["role"] != "Admin":
+        from flask import jsonify
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
 
+    from flask import jsonify
+    data = request.get_json()
+    username = data.get("username")
+    action = data.get("action")
+
+    if not username or action not in ["deactivate", "reactivate"]:
+        return jsonify({"success": False, "message": "Invalid request"}), 400
+
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        new_role = "Deactivated" if action == "deactivate" else "User"
+        cursor.execute("UPDATE users SET role = %s WHERE username = %s", (new_role, username))
+        db.commit()
+        cursor.close()
+        db.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@admin_bp.route("/deactivation_center")
+def deactivation_center():
+    if "user" not in session or session["user"]["role"] != "Admin":
+        return redirect(url_for("auth.login"))
+
+    active_user = session["user"]["username"]
+    user_full = "Unknown"
+    user_email = "Unknown"
+    user_role = "Admin"
+    user_dob = "Unknown"
+    system_users = []
+    pending_count = 0
+
+    try:
+        db = get_db_connection()
+        cursor = db.cursor()
+        
+        # Fetch admin profile
+        cursor.execute("SELECT fullname, email, role, dob FROM users WHERE username = %s", (active_user,))
+        profile = cursor.fetchone()
+        if profile:
+            user_full, user_email, user_role, user_dob = profile
+
+        # Fetch pending count for notification
+        cursor.execute("SELECT COUNT(*) FROM documentupload WHERE status = 'Pending'")
+        pending_count = cursor.fetchone()[0]
+
+        # Fetch all users except current admin
+        cursor.execute("SELECT username, fullname, email, role FROM users WHERE username != %s", (active_user,))
+        system_users = cursor.fetchall()
+        
+        cursor.close()
+        db.close()
+    except Exception:
+        pass
+
+    # Build badge HTML
+    badge_html = f'<span class="notif-badge">{pending_count}</span>' if pending_count > 0 else ''
+    
+    # Build user rows HTML
+    user_rows = ""
+    for user in system_users:
+        uname, fname, email, role = user
+        status = "Active" if role != "Deactivated" else "Deactivated"
+        action_btn = "Deactivate" if role != "Deactivated" else "Reactivate"
+        action_cmd = "deactivate" if role != "Deactivated" else "reactivate"
+        user_rows += f"<tr><td>{uname}</td><td>{fname}</td><td>{role}</td><td><form action='/toggle_user_status' method='POST' style='margin:0; border: none; padding: 0;' onsubmit=\"event.preventDefault(); fetch('/toggle_user_status', {{method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify({{username: '{uname}', action: '{action_cmd}'}})}}).then(r => r.json()).then(d => {{if (d.success) location.reload();}})\"><button type='submit' class='btn-deactivate' style='border:none; padding:6px 12px; background: #e74c3c; color: white; border-radius: 4px; cursor: pointer;' onclick=\"return confirm('Are you sure you want to {action_cmd} {uname}?');\">{action_btn}</button></form></td></tr>"
+        
+    return render_template_string(f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Deactivation Center - SecureDoc</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f7f6; }}
+        
+        /* Sidebar Styles */
+        .sidebar {{ width: 250px; background: #516d8a; color: white; display: flex; flex-direction: column; }}
+        .sidebar-header {{ padding: 20px; background: #3e546a; text-align: center; font-weight: bold; font-size: 20px; margin: 0; }}
+        .nav-links {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
+        .nav-links li a {{ display: block; padding: 15px 20px; color: #ecf0f1; text-decoration: none; border-left: 4px solid transparent; transition: 0.3s; }}
+        .nav-links li a:hover, .nav-links li a.active {{ background: #3e546a; border-left: 4px solid white; padding-left: 25px; }}
+        .logout {{ padding: 15px 20px; background: #3e546a; color: white; text-align: center; text-decoration: none; font-weight: bold; margin-top: auto; }}
+
+        /* Main Content & Topbar */
+        .main-content {{ flex: 1; display: flex; flex-direction: column; overflow-y: auto; }}
+        .topbar {{ background: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }}
+        .topbar h2 {{ margin: 0; color: #333; }}
+        
+        .topbar-right {{ display: flex; align-items: center; gap: 25px; }}
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background: #e74c3c; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+
+        /* Profile Dropdown */
+        .profile-menu {{ position: relative; display: inline-block; cursor: pointer; }}
+        .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; }}
+        .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background-color: white; min-width: 250px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); z-index: 100; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }}
+        .profile-dropdown.show {{ display: block; }}
+        .profile-header {{ background: #3e546a; color: white; padding: 15px; text-align: center; }}
+        .profile-details {{ padding: 15px; color: #333; }}
+        .profile-details p {{ margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 8px; }}
+
+        /* Table & Cards */
+        .dashboard-body {{ padding: 40px; background: #f8f9fa; flex: 1; }}
+        .card {{ background: white; padding: 30px; border-radius: 8px; border: 1px solid #e0e0e0; border-top: 4px solid #e74c3c; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background-color: #f8f9fa; color: #555; text-transform: uppercase; font-size: 12px; }}
+        
+        .btn-deactivate {{ background: #e74c3c; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; }}
+        .btn-deactivate:hover {{ background: #c0392b; }}
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">SecureDoc Admin</div>
+        <ul class="nav-links">
+            <li><a href="/admin_dashboard">System Overview</a></li>
+            <li><a href="/user_management">User Management</a></li>
+            <li><a href="/deactivation_center" class="active">Deactivation Center</a></li>
+            <li><a href="/compliance_manager">Compliance Manager</a></li>
+            <li><a href="/audit">Audit Trails</a></li>
+        </ul>
+        <a href="/logout" class="logout">Secure Logout</a>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <h2>Account Deactivation Center</h2>
+            <div class="topbar-right">
+                <div class="bell-wrapper">
+                    🔔
+                    {badge_html}
+                </div>
+                
+                <div class="profile-menu" onclick="document.getElementById('adminDrop').classList.toggle('show')">
+                    <div class="role-badge">{active_user}</div>
+                    <div id="adminDrop" class="profile-dropdown">
+                        <div class="profile-header">
+                            <h3 style="margin:0;">{user_full}</h3>
+                            <p style="margin:5px 0 0 0; font-size:12px; opacity:0.9;">ADMINISTRATOR</p>
+                        </div>
+                        <div class="profile-details">
+                            <p><strong>Username:</strong> {active_user}</p>
+                            <p><strong>Email:</strong> {user_email}</p>
+                            <p><strong>DOB:</strong> {user_dob}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-body">
+            <div class="card">
+                <h3 style="margin-top: 0; color: #e74c3c;">System Access Control</h3>
+                <p style="color: #666; font-size: 14px;">Warning: Deactivating a user will immediately revoke their access to all portals. This action is logged in the Audit Trail.</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {user_rows if system_users else '<tr><td colspan="4" style="text-align:center; padding: 20px;">No other active users found.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onclick = function(event) {{
+            if (!event.target.closest('.profile-menu')) {{
+                let dropdowns = document.getElementsByClassName("profile-dropdown");
+                for (let i = 0; i < dropdowns.length; i++) {{
+                    if (dropdowns[i].classList.contains('show')) {{
+                        dropdowns[i].classList.remove('show');
+                    }}
+                }}
+            }}
+        }}
+    </script>
+</body>
+</html>
+""")
 @admin_bp.route('/user_management', methods=['GET', 'POST'])
 def user_management():
     if 'user' not in session or session['user']['role'] != 'Admin':
@@ -235,6 +432,7 @@ def user_management():
         <ul class="nav-links">
             <li><a href="/admin_dashboard">System Overview</a></li>
             <li><a href="/user_management" class="active">User Management</a></li>
+            <li><a href="/deactivation_center">Deactivation Center</a></li>
             <li><a href="/compliance_manager">Compliance Manager</a></li>
             <li><a href="/audit">Audit Trails</a></li>
         </ul>
@@ -403,6 +601,7 @@ def compliance_manager():
         <ul class="nav-links">
             <li><a href="/admin_dashboard">System Overview</a></li>
             <li><a href="/user_management">User Management</a></li>
+            <li><a href="/deactivation_center">Deactivation Center</a></li>
             <li><a href="/compliance_manager" class="active">Compliance Manager</a></li>
             <li><a href="/audit">Audit Trails</a></li>
         </ul>
