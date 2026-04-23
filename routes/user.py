@@ -215,6 +215,7 @@ def my_submissions():
 
     user_full, user_email, user_dob = "Unknown", "Unknown", "Unknown"
     user_docs = []
+    notif_count = 0
 
     try:
         db = get_db_connection()
@@ -225,6 +226,9 @@ def my_submissions():
 
         cursor.execute("SELECT id, doc_type, file_name, status, comments FROM documentupload WHERE username = %s ORDER BY id DESC", (active_user,))
         user_docs = cursor.fetchall()
+        for doc in user_docs:
+            if doc[3] in ['Approved', 'Rejected']:
+                notif_count += 1
     except Exception:
         pass
 
@@ -250,7 +254,8 @@ def my_submissions():
         /* Unified Topbar Alignment */
         .topbar-right {{ display: flex; align-items: center; gap: 20px; }}
         .top-link {{ color: #516d8a; text-decoration: none; font-weight: bold; font-size: 15px; }}
-        .bell-icon {{ font-size: 20px; cursor: pointer; }}
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background-color: #e74c3c; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 50%; border: 2px solid white; }}
 
         /* Fixed Dropdown Alignment */
         .profile-menu {{ position: relative; display: inline-block; }}
@@ -289,7 +294,10 @@ def my_submissions():
             <h2>Submission Record</h2>
             <div class="topbar-right">
                 <a href="/support" class="top-link">Help</a>
-                <span class="bell-icon">🔔</span>
+                <div class="bell-wrapper" title="You have {notif_count} updates">
+                    🔔
+                    {'<span class="notif-badge">' + str(notif_count) + '</span>' if notif_count > 0 else ''}
+                </div>
                 <div class="profile-menu">
                     <div class="role-badge" onclick="document.getElementById('userDrop').classList.toggle('show')">{active_user}</div>
                     <div id="userDrop" class="profile-dropdown">
@@ -325,6 +333,7 @@ def version_history():
 
     user_full, user_email, user_dob = "Unknown", "Unknown", "Unknown"
     doc_history = {}
+    notif_count = 0
 
     try:
         db = get_db_connection()
@@ -336,6 +345,8 @@ def version_history():
         cursor.execute("SELECT doc_type, file_name, status, comments FROM documentupload WHERE username = %s ORDER BY id ASC", (active_user,))
         for doc in cursor.fetchall():
             dtype = doc[0]
+            if doc[2] in ['Approved', 'Rejected']:
+                notif_count += 1
             if dtype not in doc_history: doc_history[dtype] = []
             doc_history[dtype].append(doc)
     except Exception:
@@ -361,7 +372,8 @@ def version_history():
         .topbar h2 {{ margin: 0; color: #333; font-size: 1.5rem; }}
         .topbar-right {{ display: flex; align-items: center; gap: 20px; }}
         .top-link {{ color: #516d8a; text-decoration: none; font-weight: bold; font-size: 15px; }}
-        .bell-icon {{ font-size: 20px; cursor: pointer; }}
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background-color: #e74c3c; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 50%; border: 2px solid white; }}
         .profile-menu {{ position: relative; display: inline-block; }}
         .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; }}
         .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background: white; min-width: 260px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); z-index: 1000; border-radius: 8px; border: 1px solid #ddd; }}
@@ -394,7 +406,10 @@ def version_history():
             <h2>Version History</h2>
             <div class="topbar-right">
                 <a href="/support" class="top-link">Help</a>
-                <span class="bell-icon">🔔</span>
+                <div class="bell-wrapper" title="You have {notif_count} updates">
+                    🔔
+                    {'<span class="notif-badge">' + str(notif_count) + '</span>' if notif_count > 0 else ''}
+                </div>
                 <div class="profile-menu">
                     <div class="role-badge" onclick="document.getElementById('userDrop').classList.toggle('show')">{active_user}</div>
                     <div id="userDrop" class="profile-dropdown">
@@ -426,6 +441,7 @@ def support():
     active_user = session['user']['username']
 
     user_full, user_email, user_dob = "Unknown", "Unknown", "Unknown"
+    notif_count = 0
 
     try:
         db = get_db_connection()
@@ -433,6 +449,11 @@ def support():
         cursor.execute("SELECT fullname, email, dob FROM users WHERE username = %s", (active_user,))
         profile = cursor.fetchone()
         if profile: user_full, user_email, user_dob = profile
+        
+        cursor.execute("SELECT status FROM documentupload WHERE username = %s", (active_user,))
+        for doc in cursor.fetchall():
+            if doc[0] in ['Approved', 'Rejected']:
+                notif_count += 1
     except Exception:
         pass
 
@@ -456,7 +477,8 @@ def support():
         .topbar h2 {{ margin: 0; color: #333; font-size: 1.5rem; }}
         .topbar-right {{ display: flex; align-items: center; gap: 20px; }}
         .top-link {{ color: #516d8a; text-decoration: none; font-weight: bold; font-size: 15px; }}
-        .bell-icon {{ font-size: 20px; cursor: pointer; }}
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background-color: #e74c3c; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 50%; border: 2px solid white; }}
         .profile-menu {{ position: relative; display: inline-block; }}
         .role-badge {{ background: #516d8a; color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; }}
         .profile-dropdown {{ display: none; position: absolute; right: 0; top: 45px; background: white; min-width: 260px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); z-index: 1000; border-radius: 8px; border: 1px solid #ddd; }}
@@ -485,7 +507,10 @@ def support():
         <div class="topbar">
             <h2>Support</h2>
             <div class="topbar-right">
-                <span class="bell-icon">🔔</span>
+                <div class="bell-wrapper" title="You have {notif_count} updates">
+                    🔔
+                    {'<span class="notif-badge">' + str(notif_count) + '</span>' if notif_count > 0 else ''}
+                </div>
                 <div class="profile-menu">
                     <div class="role-badge" onclick="document.getElementById('userDrop').classList.toggle('show')">{active_user}</div>
                     <div id="userDrop" class="profile-dropdown">
@@ -518,6 +543,7 @@ def faqs():
     active_user = session['user']['username']
 
     user_full, user_email, user_dob = "Unknown", "Unknown", "Unknown"
+    notif_count = 0
 
     try:
         db = get_db_connection()
@@ -526,6 +552,11 @@ def faqs():
         profile = cursor.fetchone()
         if profile:
             user_full, user_email, user_dob = profile
+
+        cursor.execute("SELECT status FROM documentupload WHERE username = %s", (active_user,))
+        for doc in cursor.fetchall():
+            if doc[0] in ['Approved', 'Rejected']:
+                notif_count += 1
     except Exception:
         pass
 
@@ -561,7 +592,8 @@ def faqs():
 
         .topbar-right {{ display: flex; align-items: center; gap: 20px; }}
         .top-link {{ color: var(--primary-blue); text-decoration: none; font-weight: bold; font-size: 15px; }}
-
+        .bell-wrapper {{ position: relative; cursor: pointer; font-size: 20px; transition: 0.3s; }}
+        .notif-badge {{ position: absolute; top: -5px; right: -8px; background-color: #e74c3c; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 50%; border: 2px solid white; }}
         /* --- PROFILE DROPDOWN --- */
         .profile-menu {{ position: relative; display: inline-block; }}
         .role-badge {{ background: var(--primary-blue); color: white; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; }}
@@ -596,7 +628,10 @@ def faqs():
             <h2>FAQs</h2>
             <div class="topbar-right">
                 <a href="/support" class="top-link">Help</a>
-                <span style="font-size: 20px;">🔔</span>
+                <div class="bell-wrapper" title="You have {notif_count} updates">
+                    🔔
+                    {'<span class="notif-badge">' + str(notif_count) + '</span>' if notif_count > 0 else ''}
+                </div>
                 <div class="profile-menu">
                     <div class="role-badge" onclick="document.getElementById('userDrop').classList.toggle('show')">{active_user}</div>
                     <div id="userDrop" class="profile-dropdown">
