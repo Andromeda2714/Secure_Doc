@@ -139,7 +139,10 @@ def toggle_user_status():
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     from flask import jsonify
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"success": False, "message": "Invalid JSON Data"}), 400
+
     username = data.get("username")
     action = data.get("action")
 
@@ -153,9 +156,9 @@ def toggle_user_status():
         cursor.execute("UPDATE users SET role = %s WHERE username = %s", (new_role, username))
         db.commit()
         cursor.close()
-        db.close()
         return jsonify({"success": True})
     except Exception as e:
+        print(f"Error toggling user: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 
